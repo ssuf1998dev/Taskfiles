@@ -1,0 +1,9 @@
+FROM golang:1.24-alpine
+
+RUN GOBIN=/usr/local/bin CGO_ENABLED=0 go install github.com/go-task/task/v3/cmd/task@latest
+
+RUN apk --no-cache add bash git openssh curl
+
+WORKDIR /app
+
+COPY . .

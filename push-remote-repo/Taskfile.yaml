@@ -1,0 +1,66 @@
+version: "3.43.3-2"
+
+silent: true
+
+tasks:
+  default:
+    desc: "Push local modifications to a remote repository."
+
+    dir: "{{.DIR}}"
+
+    vars:
+      CURRENT_BRANCH:
+        sh: git rev-parse --abbrev-ref HEAD
+      CURRENT_REMOTE:
+        sh: git remote
+      # BRANCH:
+      # COMMIT_MESSAGE:
+
+    requires:
+      vars:
+        - COMMIT_MESSAGE
+
+    preconditions:
+      - command -v git
+      - git rev-parse --abbrev-ref HEAD
+      - "[ ! -z $(git remote) ]"
+
+    cmds:
+      - cmd: |
+          if [ -z "{{.BRANCH}}" ]; then
+            exit 0
+          fi
+          git add .
+          git commit -m "{{.COMMIT_MESSAGE}}"
+          git push
+      - defer: |
+          if [ {{.EXIT_CODE}} -ne 0 ]; then
+            git checkout "{{.CURRENT_BRANCH}}" || true
+            git branch -D "{{.BRANCH}}" || true
+          fi
+      - cmd: |
+          if [ ! -z "{{.BRANCH}}" ]; then
+            exit 0
+          fi
+          git checkout -b "{{.BRANCH}}"
+          git add .
+          git commit -m "{{.COMMIT_MESSAGE}}"
+          git push -u "{{.CURRENT_REMOTE}}" "{{.BRANCH}}"
+          git checkout "{{.CURRENT_BRANCH}}"
+
+  batch:
+    desc: "Push all to remote repositories under current working directory."
+
+    dir: "{{.USER_WORKING_DIR}}"
+
+    vars:
+      DIRS:
+        sh: find . -maxdepth 1 -mindepth 1  -not -path "*/.*" -type d
+
+    requires:
+      vars: []
+
+    cmd:
+      for: { var: DIRS }
+      vars: { DIR: "{{.ITEM}}" }
+      task: default

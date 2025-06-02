@@ -1,0 +1,73 @@
+version: "3.43.3-2"
+
+silent: true
+
+tasks:
+  default:
+    desc: "Clone a remote repository through Git over Http."
+
+    vars:
+      # OWNER:
+      # REPOSITORY:
+      # TOKEN:
+      PROVIDER: "github.com"
+      BRANCH: '{{default "main" .BRANCH}}'
+      # DEPTH:
+      # IGNORE_ERROR:
+
+    requires:
+      vars:
+        - OWNER
+        - REPOSITORY
+
+    preconditions:
+      - command -v git
+
+    cmd: |
+      url="https://{{if .TOKEN}}{{.TOKEN}}@{{end}}{{.PROVIDER}}/{{.OWNER}}/{{.REPOSITORY}}.git"
+      cmd="git clone --branch {{.BRANCH}}"
+      if [ ! -z "{{.DEPTH}}" ]; then
+        cmd="$cmd --depth={{.DEPTH}}"
+      fi
+      if [ -z "{{.IGNORE_ERROR}}" ]; then
+        eval "$cmd $url"
+      else
+        eval "$cmd $url" || true
+      fi
+
+  test:default:
+    cmds:
+      - task: default
+        vars:
+          OWNER: github
+          REPOSITORY: gitignore
+          DEPTH: 1
+
+      - test -d ./gitignore
+
+  batch:
+    desc: "Clone remote repositories through Git over Http."
+
+    vars:
+      {}
+      # REPOSITORIES:
+
+    requires:
+      vars:
+        - REPOSITORIES
+
+    cmd:
+      for: { var: REPOSITORIES, split: "," }
+      vars: { REPOSITORY: "{{.ITEM}}" }
+      task: default
+
+  test:batch:
+    cmds:
+      - task: batch
+        vars:
+          OWNER: github
+          REPOSITORIES: gitignore,.github
+          DEPTH: 1
+
+      - test -d ./gitignore
+      - test -d ./.github
