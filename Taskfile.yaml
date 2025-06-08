@@ -1,22 +1,4 @@
-version: "3.43.3-2"
+version: 3
 
 includes:
   clone-remote-repo: ./clone-remote-repo
-
-tasks:
-  test:tasks:
-    cmds:
-      - task: clone-remote-repo:test:default
-      - task: clone-remote-repo:test:batch
-
-  test:
-    vars:
-      BUILT_IMAGE: "{{lower (snakeCase _name)}}:{{now | unixEpoch}}"
-
-    cmds:
-      - docker build -t "{{.BUILT_IMAGE}}" -f Dockerfile.test .
-      - docker run --rm "{{.BUILT_IMAGE}}" task test:tasks
-      - docker image rm -f "{{.BUILT_IMAGE}}"
-
-    preconditions:
-      - command -v docker

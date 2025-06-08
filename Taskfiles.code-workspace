@@ -1,0 +1,24 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "plugins"
+		}
+	],
+	"settings": {
+		"editor.formatOnSave": true,
+		"prettier.enable": false,
+		"eslint.enable": false,
+		"[dockerfile]": {
+			"editor.defaultFormatter": "ms-azuretools.vscode-containers"
+		},
+	},
+	"extensions": {
+		"recommendations": [
+			"redhat.vscode-yaml",
+			"ms-azuretools.vscode-containers"
+		]
+	}
+}

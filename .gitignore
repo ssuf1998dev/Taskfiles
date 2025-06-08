@@ -4,7 +4,7 @@
 .DS_Store
 .AppleDouble
 .LSOverride
-Icon[]
+Icon\[\]
 
 # Thumbnails
 ._*
@@ -70,3 +70,6 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+
+*.dist.wasm
+.task

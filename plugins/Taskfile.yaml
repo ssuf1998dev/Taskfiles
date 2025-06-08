@@ -1,0 +1,48 @@
+version: 3
+
+vars:
+  TINYGO_IMAGE: tinygo/tinygo:0.37.0
+
+  GOPROXY: '{{.GOPROXY | default "https://goproxy.cn"}}'
+
+tasks:
+  build:
+    vars:
+      PLUGINS:
+        sh: find * -maxdepth 0 -type d
+
+    cmds:
+      - docker volume create taskfiles
+      - for: { var: PLUGINS }
+        task: "build:{{.ITEM}}"
+
+    sources:
+      - ./*/*.go
+
+    generates:
+      - ./*/*.dist.wasm
+
+  build:*:
+    vars:
+      PLUGIN: "{{index .MATCH 0}}"
+
+    cmds:
+      - docker volume create taskfiles
+      - docker run --rm -v $(pwd):/src -v taskfiles:/home/tinygo/go -w /src -e GOPROXY={{.GOPROXY}} {{.TINYGO_IMAGE}} sh -c "sudo chown 1000:1000 /home/tinygo/go && tinygo build -no-debug -panic=trap -scheduler=none -gc=leaking -target wasip1 -buildmode=c-shared -o {{.PLUGIN}}/{{.PLUGIN}}.dist.wasm {{.PLUGIN}}/{{.PLUGIN}}.go"
+
+    sources:
+      - "{{.PLUGIN}}/*.go"
+
+    generates:
+      - "{{.PLUGIN}}/{{.PLUGIN}}.dist.wasm"
+
+    preconditions:
+      - command -v docker
+
+  test:
+    cmds:
+      - "test -n $(extism call --wasi id/id.dist.wasm uuid)"
+      - 'test "$(extism call --wasi strman/strman.dist.wasm camelCase --input strman.dist.wasm)" == "strmanDistWasm"'
+
+    preconditions:
+      - command -v extism
