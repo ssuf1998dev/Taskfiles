@@ -73,3 +73,7 @@ $RECYCLE.BIN/
 
 *.dist.wasm
 .task
+*.log
+
+playground/*
+!playground/.gitkeep

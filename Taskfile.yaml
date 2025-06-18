@@ -1,4 +1,12 @@
 version: 3
 
 includes:
-  clone-remote-repo: ./clone-remote-repo
+  docker: ./docker
+
+tasks:
+  build:taskfiles-runner:
+    cmd:
+      task: docker:build
+      vars:
+        PROXY: '{{.PROXY | default "http://127.0.0.1:7890"}}'
+        TAG: '{{printf "%s:%s" "ssuf1998/taskfiles-runner" (now | unixEpoch)}}'

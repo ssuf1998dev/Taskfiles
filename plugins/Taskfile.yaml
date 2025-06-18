@@ -26,8 +26,10 @@ tasks:
     vars:
       PLUGIN: "{{index .MATCH 0}}"
 
+    label: "build-{{.PLUGIN}}"
+
     cmds:
-      - docker volume create taskfiles
+      - docker volume create taskfiles >/dev/null
       - docker run --rm -v $(pwd):/src -v taskfiles:/home/tinygo/go -w /src -e GOPROXY={{.GOPROXY}} {{.TINYGO_IMAGE}} sh -c "sudo chown 1000:1000 /home/tinygo/go && tinygo build -no-debug -panic=trap -scheduler=none -gc=leaking -target wasip1 -buildmode=c-shared -o {{.PLUGIN}}/{{.PLUGIN}}.dist.wasm {{.PLUGIN}}/{{.PLUGIN}}.go"
 
     sources:

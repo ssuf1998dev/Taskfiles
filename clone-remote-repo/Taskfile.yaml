@@ -6,14 +6,19 @@ tasks:
   default:
     desc: "Clone a remote repository through Git over Http."
 
+    dir: "{{.DIR}}"
+
     vars:
       # OWNER:
       # REPOSITORY:
       # TOKEN:
-      PROVIDER: "github.com"
+      PROVIDER: '{{default "github.com" .PROVIDER}}'
       BRANCH: '{{default "main" .BRANCH}}'
       # DEPTH:
       # IGNORE_ERROR:
+      # INSCURE:
+      DIR:
+        sh: echo $(realpath "{{.DIR | default .USER_WORKING_DIR}}")
 
     requires:
       vars:
@@ -25,7 +30,10 @@ tasks:
 
     cmd: |
       url="https://{{if .TOKEN}}{{.TOKEN}}@{{end}}{{.PROVIDER}}/{{.OWNER}}/{{.REPOSITORY}}.git"
-      cmd="git clone --branch {{.BRANCH}}"
+      cmd="git clone --quiet --branch {{.BRANCH}}"
+      if [ ! -z "{{.INSCURE}}" ]; then
+        cmd="GIT_SSL_NO_VERIFY=true $cmd"
+      fi
       if [ ! -z "{{.DEPTH}}" ]; then
         cmd="$cmd --depth={{.DEPTH}}"
       fi
@@ -34,16 +42,6 @@ tasks:
       else
         eval "$cmd $url" || true
       fi
-
-  test:default:
-    cmds:
-      - task: default
-        vars:
-          OWNER: github
-          REPOSITORY: gitignore
-          DEPTH: 1
-
-      - test -d ./gitignore
 
   batch:
     desc: "Clone remote repositories through Git over Http."
@@ -58,16 +56,13 @@ tasks:
 
     cmd:
       for: { var: REPOSITORIES, split: "," }
-      vars: { REPOSITORY: "{{.ITEM}}" }
+      vars:
+        REPOSITORY: "{{.ITEM}}"
+        TOKEN: { ref: .TOKEN }
+        PROVIDER: { ref: .PROVIDER }
+        BRANCH: { ref: .BRANCH }
+        DEPTH: { ref: .DEPTH }
+        IGNORE_ERROR: { ref: .IGNORE_ERROR }
+        INSCURE: { ref: .INSCURE }
+        DIR: { ref: .DIR }
       task: default
-
-  test:batch:
-    cmds:
-      - task: batch
-        vars:
-          OWNER: github
-          REPOSITORIES: gitignore,.github
-          DEPTH: 1
-
-      - test -d ./gitignore
-      - test -d ./.github

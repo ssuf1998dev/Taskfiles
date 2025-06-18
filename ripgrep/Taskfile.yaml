@@ -1,0 +1,51 @@
+version: 3
+
+silent: true
+
+tasks:
+  default:
+    desc: "Search using ripgrep then output in a preferred format."
+
+    dir: "{{.TARGET}}"
+
+    vars:
+      TARGET:
+        sh: echo $(realpath "{{.TARGET | default .USER_WORKING_DIR}}")
+      PREFIX:
+        sh: echo $(basename "{{.TARGET}}")
+      DATA:
+        sh: echo $(rg --json "{{.SEARCH}}" | jq -r -s '(.[] | select(.type == "match"))' | jq -s '.')
+      # SEARCH:
+      # OUTPUT_FORMAT:
+
+    requires:
+      vars:
+        - SEARCH
+        - name: OUTPUT_FORMAT
+          enum:
+            - raw
+            - json
+            - plain
+
+    preconditions:
+      - test -d "{{.TARGET}}"
+      - command -v rg
+      - command -v jq
+
+    cmds:
+      - |
+        if [[ "{{.OUTPUT_FORMAT}}" == "raw" ]]; then
+          rg "{{.SEARCH}}"
+        fi
+      - |
+        if [[ "{{.OUTPUT_FORMAT}}" == "json" ]]; then
+          echo '{{.DATA}}' | jq
+        fi
+      - |
+        if [[ "{{.OUTPUT_FORMAT}}" == "plain" ]]; then
+          plain=$(
+            echo '{{.DATA}}' | jq '. | group_by(.data.path.text) | map({key: .[0].data.path.text, value: map((.data.line_number | tostring | . + ":" | . + (" " * (8 - length)) ) + (.data.lines.text | tostring)) | join("")})' \
+            | jq -r '.[] | (.key) + "\n" + (.value)'
+          )
+          echo "$plain"
+        fi
